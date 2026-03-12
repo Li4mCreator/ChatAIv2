@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Assistent</title>
+<style>
+body,html{margin:0;padding:0;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;height:100%;display:flex;flex-direction:column;}
+body.dark{background:#343541;color:white;}
+body.light{background:#f5f5f5;color:#111;}
+header{display:flex;justify-content:space-between;align-items:center;padding:15px;background:#444654;color:white;}
+body.light header{background:#e5e5e5;color:black;}
+header h1{margin:0;font-size:20px;}
+header button{padding:5px 10px;border:none;border-radius:5px;cursor:pointer;font-size:14px;}
+#tabs button{margin-left:5px;padding:5px 10px;border:none;border-radius:5px;background:#22c55e;color:white;cursor:pointer;font-size:14px;}
+body.light #tabs button{background:#10a37f;color:white;}
+#chatBox{flex:1;padding:15px;overflow-y:auto;display:flex;flex-direction:column;scroll-behavior:smooth;border-bottom:1px solid #555;}
+.message{max-width:70%;padding:10px;margin:5px 0;border-radius:12px;line-height:1.4;font-size:14px;}
+.user{align-self:flex-end;background:#22c55e;color:white;}
+.ai{align-self:flex-start;background:#444654;color:white;}
+body.light .user{background:#10a37f;color:white;}
+body.light .ai{background:#e2e2e2;color:black;}
+#inputArea{display:flex;padding:8px;background:#444654;align-items:center;}
+body.light #inputArea{background:#e5e5e5;}
+#inputArea input[type=text]{flex:1;padding:8px;border-radius:6px;border:none;font-size:14px;margin-right:5px;}
+#inputArea button{padding:8px 10px;border:none;border-radius:6px;background:#22c55e;color:white;cursor:pointer;margin-left:3px;font-size:14px;flex-shrink:0;}
+#searchImageContainer{display:flex;gap:20px;height:100%;padding:10px;} /* gap buat pisahin search & image */
+#search,#image{padding:10px;flex:1;overflow-y:auto;display:flex;flex-direction:column;border:1px solid #555;border-radius:8px;} /* border biar keliatan pisah */
+#search input,#image input{flex:1;padding:8px;border-radius:6px;border:none;font-size:14px;margin-bottom:5px;}
+#search button,#image button{padding:8px 10px;border:none;border-radius:6px;background:#22c55e;color:white;cursor:pointer;font-size:14px;}
+#image img{max-width:100%;border-radius:10px;display:block;margin-top:10px;}
+footer{text-align:center;padding:10px;font-size:12px;opacity:0.7;color:#888;}
+</style>
+</head>
+<body class="dark">
+
+<header>
+<h1>AI Assistent</h1>
+<button onclick="toggleMode()">🌙</button>
+<div id="tabs">
+<button onclick="showTab('chat')">Chat</button>
+<button onclick="showTab('searchImage')">Search/Image</button>
+</div>
+</header>
+
+<!-- Chat Tab -->
+<div id="chat">
+<div id="chatBox"></div>
+<div id="inputArea">
+<input type="text" id="input" placeholder="Ask AI Assistent...">
+<button onclick="send()">Send</button>
+<button onclick="voiceInput()">🎤</button>
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+<button onclick="document.getElementById('fileInput').click()">📷</button>
+</div>
+</div>
+
+<!-- Search + Image Tab -->
+<div id="searchImage" style="display:none; flex:1;">
+<div id="searchImageContainer">
+  <!-- Search -->
+  <div id="search">
+    <input id="searchInput" placeholder="Search Google...">
+    <button onclick="searchGoogle()">Go</button>
+  </div>
+  <!-- Image Generator -->
+  <div id="image">
+    <input id="prompt" placeholder="Describe image...">
+    <button onclick="generateImage()">Generate</button>
+    <img id="result" src="" alt="">
+  </div>
+</div>
+</div>
+
+<footer>This AI was created by Liamz</footer>
+
+<script>
+const chatBox=document.getElementById("chatBox");
+
+// Dark/Light toggle
+function toggleMode(){
+    document.body.classList.toggle("light");
+    document.body.classList.toggle("dark");
+}
+
+// Show tab
+function showTab(tab){
+    document.getElementById("chat").style.display="none";
+    document.getElementById("searchImage").style.display="none";
+    document.getElementById(tab).style.display="block";
+}
+
+// Add message
+function addMessage(text,type){
+    const div=document.createElement("div");
+    div.className="message "+type;
+    div.innerText=text;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Dummy AI logic
+function dummyAI(text){
+    const lower=text.toLowerCase();
+    if(lower.includes("hello ai")) return "Hello Captain";
+    if(lower.includes("siapa liamz?")) return "Liamz adalah pencipta saya, saya diciptakan olehnya. Dan jika anda ingin tau seberapa pintar dia?lihat saja ciptaannya (Saya)";
+    if(lower.includes("emg kelebihan ai ini apa?")) return "Tidak banyak karena masih beta test";
+    if(lower.includes("lau sape mpruy?")) return "Gw Assistent AI jir🤓😂.";
+    if(lower.includes("skrg jam brpa bro?")) return "Sekarang jam "+new Date().toLocaleTimeString();
+    if(lower.includes("ingfokan jokes lucu mpruy")) return "Ayam ayam apa yang besar?Ayam semesta awokawok😂";
+    if(lower.includes("egiluy lmao pisan kang, garing lu bangsat")) return "Lah gw mah basah jembuy, kan gw bukan makhluk air";
+    if(lower.includes("dih, bisa ae lu bujang")) return "Kasih paham bos bos bos😹";
+   if(lower.includes("ehh btw lu tau alexander the great ga?")) return "Tau dong, Aleksander III dari Makedonia, lebih dikenal sebagai Aleksander Agung, adalah seorang raja dari Kerajaan Yunani kuno dari Makedonia. Pada usia 20 tahun, ia meneruskan takhta ayahnya, Filipus II dari Makedonia yang tewas dibunuh pada pernikahan Kleopatra dari Makedonia pada bulan Oktober 336 SM..";
+   if(lower.includes("bini gw cakep ga bos?😂")) return "Jujur lu sakit sih men";
+   if(lower.includes("oh iya, gw kalo mau search sesuatu kemana tuh?")) return "Ke opsi yang search aja, tapi you know lah namanya masih beta, searching nya masih berbasis Google jadi kalo lu search bakal langsung diarahin ke Google"
+   if(lower.includes("lu tau top 3 anime masterpiece ga?")) return "Oh jelas top 3 anime masterpiece 1.Koe No Katachi, 2.Kimi No Na Wa, 3.Your Lie In April"
+   if(lower.includes("kalo big three anime tau?")) return "Tau juga itumah, 1.Naruto, 2.One Piece, 3.Bleach"
+   if(lower.includes("rekomendasi 15 anime romance terbaik")) return "INI DIA REKOMENDASI ANIME ROMANCE 1.I'm Living with an Otaku NEET, 2.I'm Getting Married to a Girl I Hate in My Class, 3.I Want to Eat Your Pancreas, 4.Josee,The Tiger And The Fish, 5.A Silent Voice, 6.Your Name, 7.Your Lie In April, 8.5 Centimeters Per Second, 9.The Wind Rises, 10.Kaoru Hana Wa Rin to Saku, 11.Darling In The Franxx, 12.Kimi No Todoke, 13.Violet Evergarden:The Movie, 14.Howl's Moving Castle, 15.To The Forest Firefly Lights"
+   if(lower.includes("rekomendasi 10 anime genre seinen")) return "1.Vinland Saga, 2.Berserk, 3.Monster, 4.One Punch Man, 5.Psycho Pass, 6.Hellsing Ova, 7.Akira, 8.Ghost In The Shell, 9.The Darwin Incident, 10.Oshi No Ko:Season 3"
+   if(lower.includes("daftar anime winter yang paling ditunggu")) return "Daftar Anime Winter 2026 Paling Ditunggu, Judul Top Semua, 1. Jujutsu Kaisen: The Culling Game Part 1, 2. Frieren: Beyond Journey's End Season 2, 3. Hell's Paradise Season 2, 4. Oshi no Ko Season 3, 5. Fire Force Season 3 Part 2, 6. Sentenced to Be a Hero, 7. Medalist Season 2"
+   if(lower.includes("5 anime genre horor terbaik")) return "1.Dan Da Dan, 2.Otherside Picnic, 3.Zombieland Saga Movie: Yumeginga Paradise, 4.Tougen Anki, 5.Hell Teacher"
+   if(lower.includes("rekomendasi 5 anime genre action dong")) return "1.Gachiakuta, 2.Jujutsu Kaisen, 3.Kimetsu No Yaiba, 4.Solo Leveling, 5.Wind Breaker"
+   if(lower.includes("rekomendasi anime genre slice of life terbaik dong")) return "1.Yuru Camp, 2.Summer Pockets, 3.Ruri No Houseki, 4.Ame To Kimi To, 5.Kirei Ni Shitemoraemasu Ka" 
+}
+
+// Send chat
+function send(){
+    const input=document.getElementById("input");
+    const text=input.value.trim();
+    if(!text) return;
+    addMessage(text,"user");
+    input.value="";
+    addMessage("Thinking...","ai");
+    setTimeout(()=>{
+        const last=chatBox.lastChild;
+        if(last && last.innerText==="Thinking...") chatBox.removeChild(last);
+        const reply=dummyAI(text);
+        addMessage(reply,"ai");
+        speak(reply);
+    },300);
+}
+
+// Upload image separately
+document.getElementById("fileInput").addEventListener("change",function(){
+    const fileInput=document.getElementById("fileInput");
+    if(fileInput.files.length===0) return;
+    const file=fileInput.files[0];
+    const reader=new FileReader();
+    reader.onload=function(e){
+        const img=document.createElement("img");
+        img.src=e.target.result;
+        img.style.maxWidth="200px";
+        img.style.borderRadius="10px";
+        addMessage("Uploaded image:","user");
+        chatBox.appendChild(img);
+        chatBox.scrollTop=chatBox.scrollHeight;
+    };
+    reader.readAsDataURL(file);
+    fileInput.value="";
+});
+
+// Voice input + AI speak
+function voiceInput(){
+    const rec=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+    rec.lang="en-US";
+    rec.onresult=e=>{
+        const text=e.results[0][0].transcript;
+        document.getElementById("input").value=text;
+        send();
+    };
+    rec.start();
+}
+
+// AI speak
+function speak(text){
+    const utter=new SpeechSynthesisUtterance(text);
+    utter.lang="en-US";
+    speechSynthesis.speak(utter);
+}
+
+// Search Google
+function searchGoogle(){
+    const q=document.getElementById("searchInput").value.trim();
+    if(!q) return;
+    window.open("https://www.google.com/search?q="+encodeURIComponent(q));
+}
+
+// Generate Image
+function generateImage(){
+    const prompt=document.getElementById("prompt").value.trim();
+    if(!prompt) return;
+    const url="https://image.pollinations.ai/prompt/"+encodeURIComponent(prompt);
+    document.getElementById("result").src=url;
+}
+
+// Press Enter to send chat
+document.getElementById("input").addEventListener("keypress",function(e){
+    if(e.key==="Enter") send();
+});
+
+// Default tab
+showTab('chat');
+</script>
+
+</body>
+</html>
